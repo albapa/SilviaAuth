@@ -12,15 +12,15 @@ const int relayPin = 3;
 const int redPin = 4;
 const int greenPin = 5;
 const int bluePin = 6;
-//const long interval = 120000;
-const long interval = 4000;
+const int masterPin = 2;
+const long interval = 120000;
+//const long interval = 4000;
 const int signalInterval = 2000;
 
 const char masterFile[] = "master";
 const char passwordFile[] = "password";
-const char logFile[] = "access.log";
+const char logFile[] = "access";
 
-//#define MASTER
 //#define DEBUG
 
 MFRC522 mfrc522(RC522_SelectPin, RC522_ResetPin);
@@ -36,7 +36,7 @@ void setup() {
   digitalWrite(relayPin,HIGH); // Set relay to closed
   
   pinMode(redPin,OUTPUT);
-  pinMode(greenPin,OUTPUT);
+  pinMode(redPin+1,OUTPUT);
   pinMode(bluePin,OUTPUT);
   
   pinMode(SD_SelectPin,OUTPUT); // Fire up SD card
@@ -45,13 +45,17 @@ void setup() {
     Serial.println("SD initialization failed!");
 #endif
     digitalWrite(redPin,HIGH); //Indicate something is wrong
+
+    
     return;
   }
-  
   digitalWrite(redPin,LOW); // Set up LED interface
   digitalWrite(greenPin,LOW);
   digitalWrite(bluePin,LOW);
+  
+  pinMode(masterPin,INPUT_PULLUP);
 #ifdef DEBUG
+  if( digitalRead(masterPin); == LOW ) Serial.println("Master mode enabled.");
   Serial.println("Setup done.");
 #endif
 }
@@ -64,13 +68,12 @@ void loop() {
   
   if(! scanCard(hash) ) return;
 
-  #ifdef MASTER
-  printHash(hash,masterFile,"N"); // Write hash to passwordfile
-  Serial.println("Master card recorded");
-  delay(2000);
-  return; // Don't do anything else in MASTER mode
-  #endif
-
+  if( digitalRead(masterPin) == LOW ) {
+    printHash(hash,masterFile,"N"); // Write hash to passwordfile
+    flashLed(bluePin);
+    return; // Don't do anything else in MASTER mode
+  }
+  
   isUser = false;
   isMaster = IsHashInFile(hash,masterFile); // Check if we have a master
   if(!isMaster) isUser = IsHashInFile(hash,passwordFile); // Check if we have a user
