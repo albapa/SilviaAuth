@@ -13,9 +13,9 @@ const int redPin = 4;
 const int greenPin = 5;
 const int bluePin = 6;
 const int masterPin = 2;
-const long interval = 120000;
+const long interval = 45000;
 //const long interval = 4000;
-const int signalInterval = 2000;
+const int signalInterval = 4000;
 
 const char masterFile[] = "master";
 const char passwordFile[] = "password";
@@ -29,8 +29,8 @@ void setup() {
   // put your setup code here, to run once:
   Serial.begin(9600);
   SPI.begin(); // Init SPI bus.
-  mfrc522.PCD_Init(); // Init MFRC522 card.
   mfrc522.PCD_SetAntennaGain(mfrc522.RxGain_max); // Set receiver gain to max for good range.
+  mfrc522.PCD_Init(); // Init MFRC522 card.
 
   pinMode(relayPin,OUTPUT);
   digitalWrite(relayPin,HIGH); // Set relay to closed
@@ -128,6 +128,9 @@ void flashLed(int pin) {
 void printHash(uint8_t* hash, const char* file, const char* remark) {
   File myFile;
   char dateStamp[] = "00-00-00 00:00:00x";
+
+  RTC.readClock();
+  RTC.getFormatted(dateStamp);
   
   myFile = SD.open(file,FILE_WRITE);
   for(int i=0; i<HASH_LENGTH; i++) {
@@ -135,8 +138,6 @@ void printHash(uint8_t* hash, const char* file, const char* remark) {
     myFile.print("0123456789abcdef"[hash[i]&0xf]);
   }
   myFile.print("   ");
-  RTC.readClock();
-  RTC.getFormatted(dateStamp);
   myFile.print(dateStamp);
   myFile.print("   ");
   myFile.print(remark);
